@@ -30,14 +30,29 @@ TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.
 
 The screenshot in [`issue-80262-natural-blank.png`](./issue-80262-natural-blank.png)
 was taken five seconds after the canonical **Identity** click.
-[`issue-80262-natural-repro.mp4`](./issue-80262-natural-repro.mp4) captures the
-reduced post-idle **Open Navigation > Styles** interaction. Its live frames
-preserve 5.711 seconds of capture timing, including 5.083 seconds of a blank
-right-hand Styles canvas after the Styles click; the encoding then holds the
-last blank frame for about two seconds for readability. Recording starts on
-the post-idle Templates surface, after the disconnected idle period and the
-worker's natural retirement, so it does not create the trigger or show the
-pre-idle healthy baseline.
+[`issue-80262-natural-repro-annotated.mp4`](./issue-80262-natural-repro-annotated.mp4)
+is the complete annotated fresh-profile run. Its 1.0x timeline includes setup,
+the healthy baseline, the entire 45.023-second interval with all automation
+clients disconnected, and the post-idle **Open Navigation > Back > Styles**
+route. A persistent panel reports every mouse move/down/up with root screenshot
+coordinates, states that no keyboard input occurred, and logs the worker,
+network, exception, and canvas observations. The final two seconds hold the
+last evidence frame only for readability.
+
+The sidecar
+[`issue-80262-natural-repro-annotated-timeline.json`](./issue-80262-natural-repro-annotated-timeline.json)
+contains the source events, screenshot hashes, render segments, evidence
+checks, and MP4 hash. The video shows the route-transition iframe initially
+absent 36 ms after the Styles click, then the newly mounted iframe connected
+with `contentDocument === null` at +1.002 seconds and still null at +5.001
+seconds. It also distinguishes the advancing hosted asset hash from the stable
+exception path, text, and `:122:927` location.
+
+The older
+[`issue-80262-natural-repro.mp4`](./issue-80262-natural-repro.mp4) preserves
+5.711 seconds of the reduced post-idle interaction, including 5.083 seconds of
+the blank Styles canvas. It begins only after the disconnected idle period, so
+the annotated video supersedes it as the complete evidence record.
 
 This satisfies the substance of
 [Alec's reproduction criteria](https://github.com/WordPress/gutenberg/issues/77716#issuecomment-4464309206):
@@ -89,7 +104,8 @@ following:
 -   it was naturally absent afterward;
 -   the restarted worker served `wp-includes/empty.html` with HTTP 200 but no
     `Document-Isolation-Policy` header;
--   the exact `documentElement` exception occurred;
+-   the exact `documentElement` exception occurred at the stable block-editor
+    asset path and `:122:927` location;
 -   the editor iframe was still blank with `contentDocument === null` five
     seconds later.
 
@@ -103,6 +119,12 @@ The final checked-in helper was verified with Chrome 150 by setting
 `CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`.
 The environment override is optional; without it, the helper uses the
 repository's bundled Chrome for Testing.
+
+Because hosted `trunk` advances, the helper reports the observed
+`assetVersion` separately from `matchesReporterAssetVersion`. The historical
+reporter and canonical runs used `ae8f14e90632f9e1151b`; the qualifying oracle
+uses the stable block-editor asset path, exact exception message, and
+`:122:927` source location rather than requiring that historical build hash.
 
 It intentionally exits 1 when current trunk reproduces the bug, exits 0 when
 the canvas stays healthy, and exits 2 when a precondition is inconclusive. It
@@ -142,7 +164,8 @@ profile afterward. Results on 2026-07-15 UTC were:
 | Flow                                                           | Browser                                     | Result                |
 | -------------------------------------------------------------- | ------------------------------------------- | --------------------- |
 | Reporter responsive + Dusk, Review-open idle, Save -> Identity | Chrome 150.0.7871.115                       | 3/3 persistent blanks |
-| Reduced idle -> Styles sequence                                | Chrome 150.0.7871.115                       | 6/6 persistent blanks |
+| Reduced idle -> Styles sequence                                | Chrome 150.0.7871.115                       | 8/8 persistent blanks |
+| Annotated reduced idle -> Styles sequence                      | Chrome for Testing 150.0.7871.124           | 1/1 persistent blank  |
 | Reduced idle -> Styles sequence                                | Repository Chrome for Testing 149.0.7827.55 | 1/1 persistent blanks |
 
 Each completed qualifying attempt had all three decisive signals: a naturally
@@ -153,10 +176,25 @@ three canonical save-completion timings from the trusted Save click resolving
 until **Saved** appeared were 257, 297, and 277 ms. Two canonical runs used the
 reporter's **Large** responsive Title size; the first used **Medium**.
 
-The sixth Chrome 150 reduced run was the final verification of the exact
-checked-in helper. It intentionally exited 1 after all strict checks passed.
-Its two missing-DIP responses were followed by the exact exception 18 and 15
-ms later, respectively.
+The sixth Chrome 150 reduced run verified the original checked-in helper
+against asset `ae8f14e90632f9e1151b`. It intentionally exited 1 after all
+strict checks passed. Its two missing-DIP responses were followed by the exact
+exception 18 and 15 ms later, respectively.
+
+Two later completed Chrome 150 triggers used hosted asset
+`4b2c4bdfdd0eedf5e84b`. The first exposed that the original oracle was coupled
+to the historical asset hash: every stable product signal passed, but the old
+matcher labeled the result inconclusive. After separating `assetVersion` from
+the stable oracle, the committed Playwright wrapper reported
+`reproduced: true` and failed its healthy-behavior assertion as intended. The
+result also reported `matchesReporterAssetVersion: false`; the exception text
+and `:122:927` location were unchanged.
+
+The annotated Chrome for Testing 150 run used that same advancing hosted asset
+and raised the same exact exception. It recorded 10 service-worker
+`empty.html` responses with HTTP 200 and no DIP header, 10 matching exceptions,
+and a connected null canvas through five seconds. Its fresh profile and owned
+browser processes were removed after capture.
 
 One attempted evidence-capture run is excluded from the hit rate: taking a
 top-level screenshot after worker retirement coincided with a fresh preview
@@ -172,6 +210,16 @@ Gutenberg. The probe classified these as inconclusive rather than healthy,
 removed their profiles and browser processes, and did not count them in the
 table.
 
+Annotated-capture development also discarded runs before qualification when a
+reconnected client reported a different viewport or when out-of-process-frame
+coordinates could not yet reach the visible route controls. Those runs made no
+claim about product behavior and their profiles were deleted. The qualifying
+capture's first presentation-only oracle also called the run inconclusive
+because it required the WordPress Core asset directory even though hosted
+trunk loaded the same stable filename from the Gutenberg plugin directory. The
+immutable events contain the exact exception; the corrected strict validator
+uses the filename, message, line, and column, just like the checked-in probe.
+
 The canonical hosted environment reported:
 
 -   WordPress `7.1-alpha-62752`;
@@ -182,8 +230,10 @@ The canonical hosted environment reported:
 
 The reporter used WordPress commit
 `558828206710d533bed65ddfaccfac05bc3f402f` (`7.1-alpha-62740`). The hosted
-revision advanced before this investigation, but the block-editor asset hash
-and its minified exception location are identical.
+revision used for the canonical evidence retained the reporter's block-editor
+asset hash. A later hosted deployment advanced that asset to
+`4b2c4bdfdd0eedf5e84b`; the exact exception message, `:122:927` location,
+missing-DIP response, and persistent null canvas remained unchanged.
 
 ## Console comparison
 

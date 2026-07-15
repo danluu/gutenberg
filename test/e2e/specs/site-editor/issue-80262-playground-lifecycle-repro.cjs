@@ -29,7 +29,9 @@ const puppeteer = require( 'puppeteer-core' );
 const { chromium } = require( '@playwright/test' );
 
 const PROFILE_PREFIX = 'gutenberg-issue-80262-profile-';
-const EXPECTED_ASSET = 'block-editor/index.min.js?ver=ae8f14e90632f9e1151b';
+const REPORTER_ASSET_VERSION = 'ae8f14e90632f9e1151b';
+const EXPECTED_EXCEPTION_MESSAGE =
+	"TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.";
 let activeRun;
 
 const sleep = ( milliseconds ) =>
@@ -113,6 +115,14 @@ function selectHeader( headers, wantedName ) {
 		( [ name ] ) => name.toLowerCase() === wantedName
 	);
 	return entry?.[ 1 ] ?? null;
+}
+
+function extractBlockEditorAssetVersion( url ) {
+	return (
+		url?.match(
+			/block-editor\/index\.min\.js\?ver=([a-f0-9]+)(?:$|[&#])/
+		)?.[ 1 ] || null
+	);
 }
 
 function targetSummary( targetInfo ) {
@@ -770,17 +780,21 @@ async function runRepro() {
 		const emptyResponses = records.filter(
 			( record ) => record.kind === 'empty-html-response'
 		);
-		const matchingException = records.find(
-			( record ) =>
+		const matchingException = records.find( ( record ) => {
+			const message = record.description?.split( '\n', 1 )[ 0 ];
+			return (
 				record.kind === 'exception' &&
-				record.url?.includes( EXPECTED_ASSET ) &&
+				!! extractBlockEditorAssetVersion( record.url ) &&
 				record.lineNumber === 122 &&
 				record.columnNumber === 927 &&
-				record.description?.includes(
-					"Cannot destructure property 'documentElement'"
-				) &&
-				record.description.includes( 'as it is null' )
+				message === EXPECTED_EXCEPTION_MESSAGE
+			);
+		} );
+		const assetVersion = extractBlockEditorAssetVersion(
+			matchingException?.url
 		);
+		const matchesReporterAssetVersion =
+			assetVersion === REPORTER_ASSET_VERSION;
 		const missingDip = emptyResponses.some(
 			( response ) =>
 				response.status === 200 &&
@@ -819,6 +833,8 @@ async function runRepro() {
 		const result = {
 			reproduced,
 			inconclusive,
+			assetVersion,
+			matchesReporterAssetVersion,
 			inconclusiveReason: inconclusive
 				? 'Final canvas was neither the exact reproduction nor explicitly healthy.'
 				: null,

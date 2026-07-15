@@ -26,7 +26,7 @@ test.describe( 'Issue 80262 hosted Playground lifecycle', () => {
 		).not.toBe( true );
 		expect(
 			result.reproduced,
-			`Issue #80262 reproduced. See ${ result.artifactDir }.`
+			`Issue #80262 reproduced with block-editor asset ${ result.assetVersion } (matches reporter asset: ${ result.matchesReporterAssetVersion }). See ${ result.artifactDir }.`
 		).toBe( false );
 	} );
 } );

@@ -1,0 +1,3664 @@
+{
+  "schemaVersion": 1,
+  "kind": "gutenberg-80262-annotated-video-timeline",
+  "generatedAt": "2026-07-15T16:44:16.003Z",
+  "mode": "real-time-1.0x",
+  "evidenceRule": "Only timestamped manifest screenshots/events are evidence; annotations and the final 2s still are generated presentation.",
+  "manifest": "/private/tmp/gutenberg-80262-annotated-capture/output/manifest.json",
+  "manifestSha256": "eb2adfecb71446259c3e8a308515f9f63abbcda8a0eb5a3b8dc3b792fdaa401c",
+  "video": {
+    "path": "/private/tmp/gutenberg-80262-video-renderer/output/issue-80262-natural-repro-annotated.mp4",
+    "sha256": "63c2112ec809ac08aa57cf8f0a9ce154bd1013ee4aa8bf68e8c62b6f95312b49",
+    "width": 1280,
+    "height": 720,
+    "codec": "h264",
+    "pixelFormat": "yuv420p",
+    "frameRate": "30/1",
+    "evidenceDurationMs": 111974,
+    "finalStillHoldMs": 2000,
+    "durationMs": 113974
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "runStartEpochMs": 1784133249618,
+  "idle": {
+    "disconnectMs": 59706,
+    "reconnectMs": 104729,
+    "durationMs": 45023,
+    "allClientsDisconnected": true,
+    "noScreenshotsOrMouseInputInsideInterval": true
+  },
+  "asset": {
+    "capturedHash": "4b2c4bdfdd0eedf5e84b",
+    "reporterHash": "ae8f14e90632f9e1151b",
+    "hashMatchesReporter": false,
+    "stablePathMessageAndLocationMatch": true
+  },
+  "captureOracleCorrection": {
+    "rawEventIndex": 55,
+    "rawEventTMs": 111494,
+    "rawLabel": "INCONCLUSIVE",
+    "rawEventPreservedInEvents": true,
+    "renderedEventText": "CAPTURE ORACLE: initial classifier INCONCLUSIVE (known path-only matcher bug)",
+    "correction": "Post-capture strict evidence validation: REPRODUCED.",
+    "knownMatcherBug": {
+      "expectedHistoricalCorePrefix": "/wp-includes/js/dist/",
+      "capturedLiveGutenbergPrefix": "/wp-content/plugins/gutenberg/build/scripts/"
+    },
+    "evidenceUnaffected": "The asset directory differs, but the block-editor asset suffix, exact TypeError, and 122:927 source location match."
+  },
+  "strictEvidenceGate": {
+    "verdict": "REPRODUCED",
+    "passesAtMs": 111210,
+    "exceptionFirstLine": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.",
+    "postStylesMissingDipMs": 106604,
+    "exactExceptionMs": 106620,
+    "firstConnectedNullMs": 107211,
+    "finalConnectedNullPlusFiveMs": 111210
+  },
+  "validatedEvidence": {
+    "keyboardNone": true,
+    "serviceWorkerPresentBeforeIdle": true,
+    "serviceWorkerAbsentAfterIdle": true,
+    "missingDipEmptyHtmlResponse": true,
+    "exactNullDocumentExceptionAt122_927": true,
+    "blankTransitionImmediate": true,
+    "connectedNullCanvasWithin1500msAfterError": true,
+    "connectedNullCanvasAtPlusFiveSeconds": true
+  },
+  "canvasEvidence": {
+    "immediateTransitionMs": 106245,
+    "immediateTransitionConnected": false,
+    "firstConnectedNullMs": 107211,
+    "firstConnectedNullAfterErrorMs": 591,
+    "finalPlusFiveMs": 111210
+  },
+  "screenshots": [
+    {
+      "tMs": 44861,
+      "sourcePath": "screenshots/01-initial-admin-before-site-editor.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/01-initial-admin-before-site-editor.png",
+      "label": "Initial scoped WordPress/admin before Site Editor click",
+      "sha256": "e017b0f86a4b786989e2e6dc189a2c209ca9e41e257b1894444d2ac8f35beb4a"
+    },
+    {
+      "tMs": 45418,
+      "sourcePath": "screenshots/02-after-site-editor-click.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/02-after-site-editor-click.png",
+      "label": "Immediately after Site Editor click",
+      "sha256": "a468f9ebec930e1308f392c740846c729e9af6da9d5527485736a957171f4221"
+    },
+    {
+      "tMs": 47049,
+      "sourcePath": "screenshots/03-site-editor-entry-ready.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/03-site-editor-entry-ready.png",
+      "label": "Site Editor entry surface ready",
+      "sha256": "8ae0c0dc73c35298d2e638da63c58368753995ee0d90264338f625f487e3f550"
+    },
+    {
+      "tMs": 47088,
+      "sourcePath": "screenshots/04-before-get-started.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/04-before-get-started.png",
+      "label": "Get Started before input",
+      "sha256": "9ab39da8c0195736d90e0b62b05811508d67e37d6face5c06dd8bac6851b74a5"
+    },
+    {
+      "tMs": 47627,
+      "sourcePath": "screenshots/05-after-get-started.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/05-after-get-started.png",
+      "label": "Get Started after input",
+      "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+    },
+    {
+      "tMs": 59698,
+      "sourcePath": "screenshots/10-healthy-canvas-before-disconnect.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/10-healthy-canvas-before-disconnect.png",
+      "label": "Healthy canvas immediately before full automation disconnect",
+      "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+    },
+    {
+      "tMs": 104792,
+      "sourcePath": "screenshots/20-post-idle-reconnect-before-input.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/20-post-idle-reconnect-before-input.png",
+      "label": "Post-45s reconnect before input",
+      "sha256": "7a6c6876b320f94e3ff10246327239aeb58940da798059f797712b24d5d568c5"
+    },
+    {
+      "tMs": 104820,
+      "sourcePath": "screenshots/21-before-open-navigation.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/21-before-open-navigation.png",
+      "label": "Before Open Navigation input",
+      "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+    },
+    {
+      "tMs": 105488,
+      "sourcePath": "screenshots/22-after-open-navigation.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/22-after-open-navigation.png",
+      "label": "After Open Navigation input",
+      "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+    },
+    {
+      "tMs": 105543,
+      "sourcePath": "screenshots/23-before-back-1.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/23-before-back-1.png",
+      "label": "Before Back input 1",
+      "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+    },
+    {
+      "tMs": 106182,
+      "sourcePath": "screenshots/24-after-back-1.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/24-after-back-1.png",
+      "label": "After Back input 1",
+      "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+    },
+    {
+      "tMs": 106206,
+      "sourcePath": "screenshots/27-before-styles.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/27-before-styles.png",
+      "label": "Before Styles input",
+      "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+    },
+    {
+      "tMs": 106268,
+      "sourcePath": "screenshots/28-after-styles-final-blank-immediate.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/28-after-styles-final-blank-immediate.png",
+      "label": "After Styles / final blank immediate",
+      "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+    },
+    {
+      "tMs": 107238,
+      "sourcePath": "screenshots/29-final-blank-plus-1s.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/29-final-blank-plus-1s.png",
+      "label": "Final blank canvas +1s",
+      "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+    },
+    {
+      "tMs": 111243,
+      "sourcePath": "screenshots/30-final-blank-plus-5s.png",
+      "resolvedPath": "/private/tmp/gutenberg-80262-annotated-capture/output/screenshots/30-final-blank-plus-5s.png",
+      "label": "Final blank canvas +5s",
+      "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+    }
+  ],
+  "events": [
+    {
+      "tMs": 2,
+      "type": "status",
+      "label": "Annotated capture started",
+      "details": {
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "playgroundUrl": "https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk"
+      }
+    },
+    {
+      "tMs": 3,
+      "type": "keyboard_none",
+      "label": "No keyboard input: start",
+      "details": {
+        "state": "start",
+        "keyboardEventCount": 0
+      }
+    },
+    {
+      "tMs": 210,
+      "type": "status",
+      "label": "Owned headless Chrome launched",
+      "details": {
+        "pid": 42955,
+        "chromePath": "/private/tmp/gutenberg-80262-annotated-capture/browser-150/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+        "endpoint": "http://127.0.0.1:53437"
+      }
+    },
+    {
+      "tMs": 426,
+      "type": "status",
+      "label": "setup automation connected",
+      "details": {
+        "browserVersion": "Chrome/150.0.7871.124"
+      }
+    },
+    {
+      "tMs": 44862,
+      "type": "mouse_move",
+      "label": "Site Editor admin-bar link",
+      "x": 261.546875,
+      "y": 66
+    },
+    {
+      "tMs": 44868,
+      "type": "mouse_down",
+      "label": "Site Editor admin-bar link",
+      "x": 261.546875,
+      "y": 66,
+      "button": "left"
+    },
+    {
+      "tMs": 44882,
+      "type": "mouse_up",
+      "label": "Site Editor admin-bar link",
+      "x": 261.546875,
+      "y": 66,
+      "button": "left"
+    },
+    {
+      "tMs": 47089,
+      "type": "mouse_move",
+      "label": "Get started",
+      "x": 802.3098449707031,
+      "y": 744.1269836425781
+    },
+    {
+      "tMs": 47094,
+      "type": "mouse_down",
+      "label": "Get started",
+      "x": 802.3098449707031,
+      "y": 744.1269836425781,
+      "button": "left"
+    },
+    {
+      "tMs": 47096,
+      "type": "mouse_up",
+      "label": "Get started",
+      "x": 802.3098449707031,
+      "y": 744.1269836425781,
+      "button": "left"
+    },
+    {
+      "tMs": 59662,
+      "type": "service_worker_state",
+      "label": "Before disconnected idle",
+      "details": {
+        "state": "present",
+        "url": "https://playground.wordpress.net/sw.js",
+        "targets": [
+          {
+            "type": "service_worker",
+            "targetId": "C3734A2BCA49125245D3E3B0FD57ADCA",
+            "url": "https://playground.wordpress.net/sw.js",
+            "attached": false
+          },
+          {
+            "type": "worker",
+            "targetId": "D0D14806B0428688F6AEC3E75B73FFFF",
+            "url": "https://playground.wordpress.net/playground-worker-endpoint-blueprints-D-ED_YBS.js",
+            "attached": false
+          },
+          {
+            "type": "page",
+            "targetId": "8C005E06E99334CD9EF42533E2CB979C",
+            "url": "https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk",
+            "attached": true
+          },
+          {
+            "type": "iframe",
+            "targetId": "44682BD4C912A6B17FB99F6970DC5D80",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-admin/site-editor.php?canvas=edit&p=%2Fwp_template%2Ftwentytwentyfive%2F%2Fhome",
+            "attached": true
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 59663,
+      "type": "canvas_sample",
+      "label": "Healthy canvas before disconnect",
+      "details": {
+        "phase": "pre_disconnect",
+        "exists": true,
+        "connected": true,
+        "hasDocument": true,
+        "hasDocumentElement": true,
+        "accessError": null,
+        "srcLength": 66185,
+        "documentURLPrefix": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html#%3C!doctype%20html%3E%0A%3Chtml%3E%0A%09%3Chead%3E%0A%09%09%3Cmeta%20charset%3D%22utf-8%22%3E%0A",
+        "documentURLLength": 66245,
+        "readyState": "complete",
+        "bodyChildren": 27,
+        "bodyText": "My WordPress Website\n\nNavigation Menu: \"Navigation\"\nSample Page\nBlog\nHello world!\n\nWelcome to WordPress. This is your first post. Edit or delete it, then start writing!\n\nJuly 15, 2026\n\nSorry, but nothing was found. Please try a search with different keywords.\n\n←﻿\n12345...7\n﻿→\nMy WordPress Website\n\n﻿\n\nUnsaved Navigation Menu.\nBlog\nAbout\nFAQs\nAuthors\nUnsaved Navigation Menu.\nEvents\nShop\nPatterns\nThemes\n\nTwenty Twenty-Five\n\nDesigned with WordPress"
+      }
+    },
+    {
+      "tMs": 59698,
+      "type": "status",
+      "label": "Setup child ready to exit",
+      "details": {
+        "pid": 43309
+      }
+    },
+    {
+      "tMs": 59706,
+      "type": "automation_disconnect",
+      "label": "All automation clients disconnected",
+      "details": {
+        "allClientsDisconnected": true,
+        "setupChildPid": 43309,
+        "setupChildExitCode": 0,
+        "idleMs": 45000
+      }
+    },
+    {
+      "tMs": 59706,
+      "type": "idle_progress",
+      "label": "Disconnected idle start",
+      "details": {
+        "elapsedMs": 0,
+        "targetMs": 45000
+      }
+    },
+    {
+      "tMs": 74707,
+      "type": "idle_progress",
+      "label": "Disconnected idle 15000ms",
+      "details": {
+        "elapsedMs": 15001,
+        "targetMs": 45000
+      }
+    },
+    {
+      "tMs": 89706,
+      "type": "idle_progress",
+      "label": "Disconnected idle 30000ms",
+      "details": {
+        "elapsedMs": 30000,
+        "targetMs": 45000
+      }
+    },
+    {
+      "tMs": 104707,
+      "type": "idle_progress",
+      "label": "Disconnected idle 45000ms",
+      "details": {
+        "elapsedMs": 45001,
+        "targetMs": 45000
+      }
+    },
+    {
+      "tMs": 104729,
+      "type": "automation_reconnect",
+      "label": "Automation reconnected after idle",
+      "details": {
+        "disconnectedIntervalMs": 45023,
+        "allClientsDisconnectedDuringInterval": true,
+        "browserVersion": "Chrome/150.0.7871.124"
+      }
+    },
+    {
+      "tMs": 104731,
+      "type": "service_worker_state",
+      "label": "After disconnected idle",
+      "details": {
+        "state": "absent",
+        "url": "https://playground.wordpress.net/sw.js",
+        "targets": [
+          {
+            "type": "worker",
+            "targetId": "D0D14806B0428688F6AEC3E75B73FFFF",
+            "url": "https://playground.wordpress.net/playground-worker-endpoint-blueprints-D-ED_YBS.js",
+            "attached": false
+          },
+          {
+            "type": "page",
+            "targetId": "8C005E06E99334CD9EF42533E2CB979C",
+            "url": "https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk",
+            "attached": true
+          },
+          {
+            "type": "iframe",
+            "targetId": "44682BD4C912A6B17FB99F6970DC5D80",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-admin/site-editor.php?canvas=edit&p=%2Fwp_template%2Ftwentytwentyfive%2F%2Fhome",
+            "attached": true
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 104793,
+      "type": "canvas_sample",
+      "label": "Canvas after reconnect before input",
+      "details": {
+        "phase": "post_reconnect_before_input",
+        "exists": true,
+        "connected": true,
+        "hasDocument": true,
+        "hasDocumentElement": true,
+        "accessError": null,
+        "srcLength": 66185,
+        "documentURLPrefix": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html#%3C!doctype%20html%3E%0A%3Chtml%3E%0A%09%3Chead%3E%0A%09%09%3Cmeta%20charset%3D%22utf-8%22%3E%0A",
+        "documentURLLength": 66245,
+        "readyState": "complete",
+        "bodyChildren": 27,
+        "bodyText": "My WordPress Website\n\nNavigation Menu: \"Navigation\"\nSample Page\nBlog\nHello world!\n\nWelcome to WordPress. This is your first post. Edit or delete it, then start writing!\n\nJuly 15, 2026\n\nSorry, but nothing was found. Please try a search with different keywords.\n\n←﻿\n12345...7\n﻿→\nMy WordPress Website\n\n﻿\n\nUnsaved Navigation Menu.\nBlog\nAbout\nFAQs\nAuthors\nUnsaved Navigation Menu.\nEvents\nShop\nPatterns\nThemes\n\nTwenty Twenty-Five\n\nDesigned with WordPress"
+      }
+    },
+    {
+      "tMs": 104795,
+      "type": "status",
+      "label": "Visible controls before post-idle route",
+      "details": {
+        "controls": [
+          {
+            "label": "About WordPress",
+            "text": "About WordPress",
+            "x": 18,
+            "y": 66,
+            "localX": 18,
+            "localY": 16
+          },
+          {
+            "label": "My WordPress Website",
+            "text": "My WordPress Website",
+            "x": 125,
+            "y": 66,
+            "localX": 125,
+            "localY": 16
+          },
+          {
+            "label": "⌘K\nOpen command palette",
+            "text": "⌘K\nOpen command palette",
+            "x": 247,
+            "y": 66,
+            "localX": 247,
+            "localY": 16
+          },
+          {
+            "label": "0\n0 Comments in moderation",
+            "text": "0\n0 Comments in moderation",
+            "x": 302,
+            "y": 66,
+            "localX": 302,
+            "localY": 16
+          },
+          {
+            "label": "New",
+            "text": "New",
+            "x": 360,
+            "y": 66,
+            "localX": 360,
+            "localY": 16
+          },
+          {
+            "label": "Howdy, admin",
+            "text": "Howdy, admin",
+            "x": 1376,
+            "y": 66,
+            "localX": 1376,
+            "localY": 16
+          },
+          {
+            "label": "Open Navigation",
+            "text": "",
+            "x": 24,
+            "y": 114,
+            "localX": 24,
+            "localY": 64
+          },
+          {
+            "label": "Block Inserter",
+            "text": "",
+            "x": 64,
+            "y": 114,
+            "localX": 64,
+            "localY": 64
+          },
+          {
+            "label": "Undo",
+            "text": "",
+            "x": 104,
+            "y": 114,
+            "localX": 104,
+            "localY": 64
+          },
+          {
+            "label": "Redo",
+            "text": "",
+            "x": 144,
+            "y": 114,
+            "localX": 144,
+            "localY": 64
+          },
+          {
+            "label": "Document Overview",
+            "text": "",
+            "x": 184,
+            "y": 114,
+            "localX": 184,
+            "localY": 64
+          },
+          {
+            "label": "Blog Home\n· Template",
+            "text": "Blog Home\n· Template",
+            "x": 704,
+            "y": 114,
+            "localX": 704,
+            "localY": 64
+          },
+          {
+            "label": "View",
+            "text": "",
+            "x": 1192,
+            "y": 114,
+            "localX": 1192,
+            "localY": 64
+          },
+          {
+            "label": "Zoom Out",
+            "text": "",
+            "x": 1232,
+            "y": 114,
+            "localX": 1232,
+            "localY": 64
+          },
+          {
+            "label": "Settings",
+            "text": "",
+            "x": 1272,
+            "y": 114,
+            "localX": 1272,
+            "localY": 64
+          },
+          {
+            "label": "Styles",
+            "text": "",
+            "x": 1312,
+            "y": 114,
+            "localX": 1312,
+            "localY": 64
+          },
+          {
+            "label": "Save",
+            "text": "Save",
+            "x": 1364,
+            "y": 114,
+            "localX": 1364,
+            "localY": 64
+          },
+          {
+            "label": "Options",
+            "text": "",
+            "x": 1416,
+            "y": 114,
+            "localX": 1416,
+            "localY": 64
+          },
+          {
+            "label": "Template",
+            "text": "Template",
+            "x": 1204,
+            "y": 170,
+            "localX": 1204,
+            "localY": 120
+          },
+          {
+            "label": "Block",
+            "text": "Block",
+            "x": 1280,
+            "y": 170,
+            "localX": 1280,
+            "localY": 120
+          },
+          {
+            "label": "Close Settings",
+            "text": "",
+            "x": 1416,
+            "y": 170,
+            "localX": 1416,
+            "localY": 120
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 1412,
+            "y": 222,
+            "localX": 1412,
+            "localY": 172
+          },
+          {
+            "label": "Change posts per page",
+            "text": "10",
+            "x": 1298,
+            "y": 407,
+            "localX": 1298,
+            "localY": 357
+          },
+          {
+            "label": "Change discussion settings",
+            "text": "Comments open",
+            "x": 1341,
+            "y": 443,
+            "localX": 1341,
+            "localY": 393
+          },
+          {
+            "label": "Content",
+            "text": "Content",
+            "x": 1300,
+            "y": 501,
+            "localX": 1300,
+            "localY": 451
+          },
+          {
+            "label": "Header",
+            "text": "Header",
+            "x": 1300,
+            "y": 551,
+            "localX": 1300,
+            "localY": 501
+          },
+          {
+            "label": "Footer",
+            "text": "Footer",
+            "x": 1300,
+            "y": 595,
+            "localX": 1300,
+            "localY": 545
+          },
+          {
+            "label": "Design",
+            "text": "Design",
+            "x": 1300,
+            "y": 657,
+            "localX": 1300,
+            "localY": 607
+          },
+          {
+            "label": "Open save panel",
+            "text": "Open save panel",
+            "x": 1300,
+            "y": -129892,
+            "localX": 1300,
+            "localY": -129942
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 104820,
+      "type": "mouse_move",
+      "label": "Open Navigation",
+      "x": 24,
+      "y": 113.890625,
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 24,
+        "dispatchY": 63.890625,
+        "rootX": 24,
+        "rootY": 113.890625,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 104827,
+      "type": "mouse_down",
+      "label": "Open Navigation",
+      "x": 24,
+      "y": 113.890625,
+      "button": "left",
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 24,
+        "dispatchY": 63.890625,
+        "rootX": 24,
+        "rootY": 113.890625,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 104829,
+      "type": "mouse_up",
+      "label": "Open Navigation",
+      "x": 24,
+      "y": 113.890625,
+      "button": "left",
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 24,
+        "dispatchY": 63.890625,
+        "rootX": 24,
+        "rootY": 113.890625,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 105297,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105326,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105341,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105353,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105367,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105380,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105393,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105406,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105501,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105501,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105502,
+      "type": "status",
+      "label": "Visible controls after Open Navigation",
+      "details": {
+        "controls": [
+          {
+            "label": "About WordPress",
+            "text": "About WordPress",
+            "x": 18,
+            "y": 66,
+            "localX": 18,
+            "localY": 16
+          },
+          {
+            "label": "My WordPress Website",
+            "text": "My WordPress Website",
+            "x": 125,
+            "y": 66,
+            "localX": 125,
+            "localY": 16
+          },
+          {
+            "label": "⌘K\nOpen command palette",
+            "text": "⌘K\nOpen command palette",
+            "x": 247,
+            "y": 66,
+            "localX": 247,
+            "localY": 16
+          },
+          {
+            "label": "0\n0 Comments in moderation",
+            "text": "0\n0 Comments in moderation",
+            "x": 302,
+            "y": 66,
+            "localX": 302,
+            "localY": 16
+          },
+          {
+            "label": "New",
+            "text": "New",
+            "x": 360,
+            "y": 66,
+            "localX": 360,
+            "localY": 16
+          },
+          {
+            "label": "Howdy, admin",
+            "text": "Howdy, admin",
+            "x": 1376,
+            "y": 66,
+            "localX": 1376,
+            "localY": 16
+          },
+          {
+            "label": "Back",
+            "text": "",
+            "x": 28,
+            "y": 130,
+            "localX": 28,
+            "localY": 80
+          },
+          {
+            "label": "All templates",
+            "text": "All templates",
+            "x": 145,
+            "y": 269,
+            "localX": 145,
+            "localY": 219
+          },
+          {
+            "label": "Twenty Twenty-Five",
+            "text": "Twenty Twenty-Five",
+            "x": 145,
+            "y": 309,
+            "localX": 145,
+            "localY": 259
+          },
+          {
+            "label": "Saved",
+            "text": "Saved",
+            "x": 150,
+            "y": 964,
+            "localX": 150,
+            "localY": 914
+          },
+          {
+            "label": "Add Template",
+            "text": "Add Template",
+            "x": 1344,
+            "y": 130,
+            "localX": 1344,
+            "localY": 80
+          },
+          {
+            "label": "Add filter",
+            "text": "",
+            "x": 530,
+            "y": 195,
+            "localX": 530,
+            "localY": 145
+          },
+          {
+            "label": "Layout",
+            "text": "",
+            "x": 1348,
+            "y": 195,
+            "localX": 1348,
+            "localY": 145
+          },
+          {
+            "label": "View options",
+            "text": "",
+            "x": 1384,
+            "y": 195,
+            "localX": 1384,
+            "localY": 145
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 555,
+            "y": 244,
+            "localX": 555,
+            "localY": 194
+          },
+          {
+            "label": "All Archives",
+            "text": "All Archives",
+            "x": 448,
+            "y": 495,
+            "localX": 448,
+            "localY": 445
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 827,
+            "y": 244,
+            "localX": 827,
+            "localY": 194
+          },
+          {
+            "label": "Blog Home",
+            "text": "Blog Home",
+            "x": 719,
+            "y": 495,
+            "localX": 719,
+            "localY": 445
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 1098,
+            "y": 244,
+            "localX": 1098,
+            "localY": 194
+          },
+          {
+            "label": "Index",
+            "text": "Index",
+            "x": 990,
+            "y": 495,
+            "localX": 990,
+            "localY": 445
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 1369,
+            "y": 244,
+            "localX": 1369,
+            "localY": 194
+          },
+          {
+            "label": "Page No Title",
+            "text": "Page No Title",
+            "x": 1261,
+            "y": 495,
+            "localX": 1261,
+            "localY": 445
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 555,
+            "y": 713,
+            "localX": 555,
+            "localY": 663
+          },
+          {
+            "label": "Page: 404",
+            "text": "Page: 404",
+            "x": 448,
+            "y": 965,
+            "localX": 448,
+            "localY": 915
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 827,
+            "y": 713,
+            "localX": 827,
+            "localY": 663
+          },
+          {
+            "label": "Pages",
+            "text": "Pages",
+            "x": 719,
+            "y": 965,
+            "localX": 719,
+            "localY": 915
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 1098,
+            "y": 713,
+            "localX": 1098,
+            "localY": 663
+          },
+          {
+            "label": "Search Results",
+            "text": "Search Results",
+            "x": 990,
+            "y": 965,
+            "localX": 990,
+            "localY": 915
+          },
+          {
+            "label": "Actions",
+            "text": "",
+            "x": 1369,
+            "y": 713,
+            "localX": 1369,
+            "localY": 663
+          },
+          {
+            "label": "Single Posts",
+            "text": "Single Posts",
+            "x": 1261,
+            "y": 965,
+            "localX": 1261,
+            "localY": 915
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105507,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105508,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105510,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105511,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105519,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105522,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 105543,
+      "type": "mouse_move",
+      "label": "Back 1",
+      "x": 28,
+      "y": 130,
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 28,
+        "dispatchY": 80,
+        "rootX": 28,
+        "rootY": 130,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 105544,
+      "type": "mouse_down",
+      "label": "Back 1",
+      "x": 28,
+      "y": 130,
+      "button": "left",
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 28,
+        "dispatchY": 80,
+        "rootX": 28,
+        "rootY": 130,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 105545,
+      "type": "mouse_up",
+      "label": "Back 1",
+      "x": 28,
+      "y": 130,
+      "button": "left",
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 28,
+        "dispatchY": 80,
+        "rootX": 28,
+        "rootY": 130,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 105689,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 105706,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 106206,
+      "type": "mouse_move",
+      "label": "Styles",
+      "x": 144.5,
+      "y": 290.40625,
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 144.5,
+        "dispatchY": 240.40625,
+        "rootX": 144.5,
+        "rootY": 290.40625,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 106207,
+      "type": "mouse_down",
+      "label": "Styles",
+      "x": 144.5,
+      "y": 290.40625,
+      "button": "left",
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 144.5,
+        "dispatchY": 240.40625,
+        "rootX": 144.5,
+        "rootY": 290.40625,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 106209,
+      "type": "mouse_up",
+      "label": "Styles",
+      "x": 144.5,
+      "y": 290.40625,
+      "button": "left",
+      "details": {
+        "dispatchMethod": "Input.dispatchMouseEvent",
+        "dispatchCoordinateSpace": "site-editor-target-local",
+        "dispatchX": 144.5,
+        "dispatchY": 240.40625,
+        "rootX": 144.5,
+        "rootY": 290.40625,
+        "frameRect": {
+          "name": null,
+          "id": null,
+          "title": "WordPress Playground wrapper (the actual WordPress site is in another, nested iframe)",
+          "src": "https://playground.wordpress.net/remote.html?v=f1ece98c23bd81f0311e112bf915022a07ab9586&progressbar=true&progressbarTitle=Energetic+Cozy+Forest",
+          "left": 0,
+          "top": 50,
+          "width": 1440,
+          "height": 950
+        }
+      }
+    },
+    {
+      "tMs": 106245,
+      "type": "canvas_sample",
+      "label": "Final canvas immediate",
+      "details": {
+        "phase": "immediate",
+        "exists": false,
+        "connected": false,
+        "hasDocument": false,
+        "bodyText": null
+      }
+    },
+    {
+      "tMs": 106604,
+      "type": "network_response",
+      "label": "wp-includes/empty.html",
+      "details": {
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-includes/empty.html",
+        "status": 200,
+        "fromServiceWorker": true,
+        "documentIsolationPolicy": null,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "mimeType": "text/html"
+      }
+    },
+    {
+      "tMs": 106620,
+      "type": "exception",
+      "label": "Runtime.exceptionThrown",
+      "details": {
+        "description": "TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.\n    at HTMLIFrameElement.I (https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)",
+        "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+        "lineNumber": 122,
+        "columnNumber": 927,
+        "stackFrames": [
+          {
+            "functionName": "I",
+            "url": "https://playground.wordpress.net/scope:energetic-cozy-forest/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b",
+            "lineNumber": 122,
+            "columnNumber": 927
+          }
+        ]
+      }
+    },
+    {
+      "tMs": 107211,
+      "type": "canvas_sample",
+      "label": "Final canvas +1s",
+      "details": {
+        "phase": "+1s",
+        "exists": true,
+        "connected": true,
+        "hasDocument": false,
+        "hasDocumentElement": false,
+        "accessError": null,
+        "srcLength": 66185,
+        "documentURLPrefix": null,
+        "documentURLLength": null,
+        "readyState": null,
+        "bodyChildren": null,
+        "bodyText": null
+      }
+    },
+    {
+      "tMs": 111210,
+      "type": "canvas_sample",
+      "label": "Final canvas +5s",
+      "details": {
+        "phase": "+5s",
+        "exists": true,
+        "connected": true,
+        "hasDocument": false,
+        "hasDocumentElement": false,
+        "accessError": null,
+        "srcLength": 66185,
+        "documentURLPrefix": null,
+        "documentURLLength": null,
+        "readyState": null,
+        "bodyChildren": null,
+        "bodyText": null
+      }
+    },
+    {
+      "tMs": 111494,
+      "type": "status",
+      "label": "INCONCLUSIVE",
+      "details": {
+        "reproduced": false,
+        "assetVersion": null,
+        "matchesReporterAssetVersion": false
+      }
+    },
+    {
+      "tMs": 111974,
+      "type": "status",
+      "label": "Owned browser profile cleaned",
+      "details": {
+        "profileDir": "/var/folders/2s/n3zj4dz53ts_0qg7gmdyt35m0000gn/T/gutenberg-80262-annotated-profile-tt4b3T",
+        "removed": true
+      }
+    },
+    {
+      "tMs": 111974,
+      "type": "keyboard_none",
+      "label": "No keyboard input: persistent",
+      "details": {
+        "state": "persistent",
+        "keyboardEventCount": 0
+      }
+    }
+  ],
+  "renderSegments": [
+    {
+      "tStartMs": 0,
+      "tEndMs": 2,
+      "durationMs": 2,
+      "screenshot": null,
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 2,
+      "tEndMs": 3,
+      "durationMs": 1,
+      "screenshot": null,
+      "eventsAtStart": [
+        0
+      ]
+    },
+    {
+      "tStartMs": 3,
+      "tEndMs": 210,
+      "durationMs": 207,
+      "screenshot": null,
+      "eventsAtStart": [
+        1
+      ]
+    },
+    {
+      "tStartMs": 210,
+      "tEndMs": 426,
+      "durationMs": 216,
+      "screenshot": null,
+      "eventsAtStart": [
+        2
+      ]
+    },
+    {
+      "tStartMs": 426,
+      "tEndMs": 44861,
+      "durationMs": 44435,
+      "screenshot": null,
+      "eventsAtStart": [
+        3
+      ]
+    },
+    {
+      "tStartMs": 44861,
+      "tEndMs": 44862,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 44861,
+        "label": "Initial scoped WordPress/admin before Site Editor click",
+        "sha256": "e017b0f86a4b786989e2e6dc189a2c209ca9e41e257b1894444d2ac8f35beb4a"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 44862,
+      "tEndMs": 44868,
+      "durationMs": 6,
+      "screenshot": {
+        "tMs": 44861,
+        "label": "Initial scoped WordPress/admin before Site Editor click",
+        "sha256": "e017b0f86a4b786989e2e6dc189a2c209ca9e41e257b1894444d2ac8f35beb4a"
+      },
+      "eventsAtStart": [
+        4
+      ]
+    },
+    {
+      "tStartMs": 44868,
+      "tEndMs": 44882,
+      "durationMs": 14,
+      "screenshot": {
+        "tMs": 44861,
+        "label": "Initial scoped WordPress/admin before Site Editor click",
+        "sha256": "e017b0f86a4b786989e2e6dc189a2c209ca9e41e257b1894444d2ac8f35beb4a"
+      },
+      "eventsAtStart": [
+        5
+      ]
+    },
+    {
+      "tStartMs": 44882,
+      "tEndMs": 45418,
+      "durationMs": 536,
+      "screenshot": {
+        "tMs": 44861,
+        "label": "Initial scoped WordPress/admin before Site Editor click",
+        "sha256": "e017b0f86a4b786989e2e6dc189a2c209ca9e41e257b1894444d2ac8f35beb4a"
+      },
+      "eventsAtStart": [
+        6
+      ]
+    },
+    {
+      "tStartMs": 45418,
+      "tEndMs": 45712,
+      "durationMs": 294,
+      "screenshot": {
+        "tMs": 45418,
+        "label": "Immediately after Site Editor click",
+        "sha256": "a468f9ebec930e1308f392c740846c729e9af6da9d5527485736a957171f4221"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 45712,
+      "tEndMs": 45718,
+      "durationMs": 6,
+      "screenshot": {
+        "tMs": 45418,
+        "label": "Immediately after Site Editor click",
+        "sha256": "a468f9ebec930e1308f392c740846c729e9af6da9d5527485736a957171f4221"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 45718,
+      "tEndMs": 45732,
+      "durationMs": 14,
+      "screenshot": {
+        "tMs": 45418,
+        "label": "Immediately after Site Editor click",
+        "sha256": "a468f9ebec930e1308f392c740846c729e9af6da9d5527485736a957171f4221"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 45732,
+      "tEndMs": 47049,
+      "durationMs": 1317,
+      "screenshot": {
+        "tMs": 45418,
+        "label": "Immediately after Site Editor click",
+        "sha256": "a468f9ebec930e1308f392c740846c729e9af6da9d5527485736a957171f4221"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 47049,
+      "tEndMs": 47088,
+      "durationMs": 39,
+      "screenshot": {
+        "tMs": 47049,
+        "label": "Site Editor entry surface ready",
+        "sha256": "8ae0c0dc73c35298d2e638da63c58368753995ee0d90264338f625f487e3f550"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 47088,
+      "tEndMs": 47089,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 47088,
+        "label": "Get Started before input",
+        "sha256": "9ab39da8c0195736d90e0b62b05811508d67e37d6face5c06dd8bac6851b74a5"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 47089,
+      "tEndMs": 47094,
+      "durationMs": 5,
+      "screenshot": {
+        "tMs": 47088,
+        "label": "Get Started before input",
+        "sha256": "9ab39da8c0195736d90e0b62b05811508d67e37d6face5c06dd8bac6851b74a5"
+      },
+      "eventsAtStart": [
+        7
+      ]
+    },
+    {
+      "tStartMs": 47094,
+      "tEndMs": 47096,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 47088,
+        "label": "Get Started before input",
+        "sha256": "9ab39da8c0195736d90e0b62b05811508d67e37d6face5c06dd8bac6851b74a5"
+      },
+      "eventsAtStart": [
+        8
+      ]
+    },
+    {
+      "tStartMs": 47096,
+      "tEndMs": 47627,
+      "durationMs": 531,
+      "screenshot": {
+        "tMs": 47088,
+        "label": "Get Started before input",
+        "sha256": "9ab39da8c0195736d90e0b62b05811508d67e37d6face5c06dd8bac6851b74a5"
+      },
+      "eventsAtStart": [
+        9
+      ]
+    },
+    {
+      "tStartMs": 47627,
+      "tEndMs": 47939,
+      "durationMs": 312,
+      "screenshot": {
+        "tMs": 47627,
+        "label": "Get Started after input",
+        "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 47939,
+      "tEndMs": 47944,
+      "durationMs": 5,
+      "screenshot": {
+        "tMs": 47627,
+        "label": "Get Started after input",
+        "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 47944,
+      "tEndMs": 47946,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 47627,
+        "label": "Get Started after input",
+        "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 47946,
+      "tEndMs": 59662,
+      "durationMs": 11716,
+      "screenshot": {
+        "tMs": 47627,
+        "label": "Get Started after input",
+        "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 59662,
+      "tEndMs": 59663,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 47627,
+        "label": "Get Started after input",
+        "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+      },
+      "eventsAtStart": [
+        10
+      ]
+    },
+    {
+      "tStartMs": 59663,
+      "tEndMs": 59698,
+      "durationMs": 35,
+      "screenshot": {
+        "tMs": 47627,
+        "label": "Get Started after input",
+        "sha256": "17f2ffa44cd23f9e4492a0cf7adcb030f74a7b460dbb78c2bd27307e2c327e82"
+      },
+      "eventsAtStart": [
+        11
+      ]
+    },
+    {
+      "tStartMs": 59698,
+      "tEndMs": 59706,
+      "durationMs": 8,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        12
+      ]
+    },
+    {
+      "tStartMs": 59706,
+      "tEndMs": 60206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        13,
+        14
+      ]
+    },
+    {
+      "tStartMs": 60206,
+      "tEndMs": 60706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 60706,
+      "tEndMs": 61206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 61206,
+      "tEndMs": 61706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 61706,
+      "tEndMs": 62206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 62206,
+      "tEndMs": 62706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 62706,
+      "tEndMs": 63206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 63206,
+      "tEndMs": 63706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 63706,
+      "tEndMs": 64206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 64206,
+      "tEndMs": 64706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 64706,
+      "tEndMs": 65206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 65206,
+      "tEndMs": 65706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 65706,
+      "tEndMs": 66206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 66206,
+      "tEndMs": 66706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 66706,
+      "tEndMs": 67206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 67206,
+      "tEndMs": 67706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 67706,
+      "tEndMs": 68206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 68206,
+      "tEndMs": 68706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 68706,
+      "tEndMs": 69206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 69206,
+      "tEndMs": 69706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 69706,
+      "tEndMs": 70206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 70206,
+      "tEndMs": 70706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 70706,
+      "tEndMs": 71206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 71206,
+      "tEndMs": 71706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 71706,
+      "tEndMs": 72206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 72206,
+      "tEndMs": 72706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 72706,
+      "tEndMs": 73206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 73206,
+      "tEndMs": 73706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 73706,
+      "tEndMs": 74206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 74206,
+      "tEndMs": 74706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 74706,
+      "tEndMs": 74707,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 74707,
+      "tEndMs": 75206,
+      "durationMs": 499,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        15
+      ]
+    },
+    {
+      "tStartMs": 75206,
+      "tEndMs": 75706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 75706,
+      "tEndMs": 76206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 76206,
+      "tEndMs": 76706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 76706,
+      "tEndMs": 77206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 77206,
+      "tEndMs": 77706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 77706,
+      "tEndMs": 78206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 78206,
+      "tEndMs": 78706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 78706,
+      "tEndMs": 79206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 79206,
+      "tEndMs": 79706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 79706,
+      "tEndMs": 80206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 80206,
+      "tEndMs": 80706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 80706,
+      "tEndMs": 81206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 81206,
+      "tEndMs": 81706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 81706,
+      "tEndMs": 82206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 82206,
+      "tEndMs": 82706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 82706,
+      "tEndMs": 83206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 83206,
+      "tEndMs": 83706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 83706,
+      "tEndMs": 84206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 84206,
+      "tEndMs": 84706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 84706,
+      "tEndMs": 85206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 85206,
+      "tEndMs": 85706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 85706,
+      "tEndMs": 86206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 86206,
+      "tEndMs": 86706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 86706,
+      "tEndMs": 87206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 87206,
+      "tEndMs": 87706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 87706,
+      "tEndMs": 88206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 88206,
+      "tEndMs": 88706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 88706,
+      "tEndMs": 89206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 89206,
+      "tEndMs": 89706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 89706,
+      "tEndMs": 90206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        16
+      ]
+    },
+    {
+      "tStartMs": 90206,
+      "tEndMs": 90706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 90706,
+      "tEndMs": 91206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 91206,
+      "tEndMs": 91706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 91706,
+      "tEndMs": 92206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 92206,
+      "tEndMs": 92706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 92706,
+      "tEndMs": 93206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 93206,
+      "tEndMs": 93706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 93706,
+      "tEndMs": 94206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 94206,
+      "tEndMs": 94706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 94706,
+      "tEndMs": 95206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 95206,
+      "tEndMs": 95706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 95706,
+      "tEndMs": 96206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 96206,
+      "tEndMs": 96706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 96706,
+      "tEndMs": 97206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 97206,
+      "tEndMs": 97706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 97706,
+      "tEndMs": 98206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 98206,
+      "tEndMs": 98706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 98706,
+      "tEndMs": 99206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 99206,
+      "tEndMs": 99706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 99706,
+      "tEndMs": 100206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 100206,
+      "tEndMs": 100706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 100706,
+      "tEndMs": 101206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 101206,
+      "tEndMs": 101706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 101706,
+      "tEndMs": 102206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 102206,
+      "tEndMs": 102706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 102706,
+      "tEndMs": 103206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 103206,
+      "tEndMs": 103706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 103706,
+      "tEndMs": 104206,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 104206,
+      "tEndMs": 104706,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 104706,
+      "tEndMs": 104707,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 104707,
+      "tEndMs": 104729,
+      "durationMs": 22,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        17
+      ]
+    },
+    {
+      "tStartMs": 104729,
+      "tEndMs": 104731,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        18
+      ]
+    },
+    {
+      "tStartMs": 104731,
+      "tEndMs": 104792,
+      "durationMs": 61,
+      "screenshot": {
+        "tMs": 59698,
+        "label": "Healthy canvas immediately before full automation disconnect",
+        "sha256": "4f41d64495524f9136e0df339c9a44edc55af6dc3b2fd91e58479fba9769ee1f"
+      },
+      "eventsAtStart": [
+        19
+      ]
+    },
+    {
+      "tStartMs": 104792,
+      "tEndMs": 104793,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 104792,
+        "label": "Post-45s reconnect before input",
+        "sha256": "7a6c6876b320f94e3ff10246327239aeb58940da798059f797712b24d5d568c5"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 104793,
+      "tEndMs": 104795,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 104792,
+        "label": "Post-45s reconnect before input",
+        "sha256": "7a6c6876b320f94e3ff10246327239aeb58940da798059f797712b24d5d568c5"
+      },
+      "eventsAtStart": [
+        20
+      ]
+    },
+    {
+      "tStartMs": 104795,
+      "tEndMs": 104820,
+      "durationMs": 25,
+      "screenshot": {
+        "tMs": 104792,
+        "label": "Post-45s reconnect before input",
+        "sha256": "7a6c6876b320f94e3ff10246327239aeb58940da798059f797712b24d5d568c5"
+      },
+      "eventsAtStart": [
+        21
+      ]
+    },
+    {
+      "tStartMs": 104820,
+      "tEndMs": 104827,
+      "durationMs": 7,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        22
+      ]
+    },
+    {
+      "tStartMs": 104827,
+      "tEndMs": 104829,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        23
+      ]
+    },
+    {
+      "tStartMs": 104829,
+      "tEndMs": 105297,
+      "durationMs": 468,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        24
+      ]
+    },
+    {
+      "tStartMs": 105297,
+      "tEndMs": 105326,
+      "durationMs": 29,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        25
+      ]
+    },
+    {
+      "tStartMs": 105326,
+      "tEndMs": 105341,
+      "durationMs": 15,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        26
+      ]
+    },
+    {
+      "tStartMs": 105341,
+      "tEndMs": 105353,
+      "durationMs": 12,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        27
+      ]
+    },
+    {
+      "tStartMs": 105353,
+      "tEndMs": 105367,
+      "durationMs": 14,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        28
+      ]
+    },
+    {
+      "tStartMs": 105367,
+      "tEndMs": 105380,
+      "durationMs": 13,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        29
+      ]
+    },
+    {
+      "tStartMs": 105380,
+      "tEndMs": 105393,
+      "durationMs": 13,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        30
+      ]
+    },
+    {
+      "tStartMs": 105393,
+      "tEndMs": 105406,
+      "durationMs": 13,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        31
+      ]
+    },
+    {
+      "tStartMs": 105406,
+      "tEndMs": 105488,
+      "durationMs": 82,
+      "screenshot": {
+        "tMs": 104820,
+        "label": "Before Open Navigation input",
+        "sha256": "e82aba038722218ffc3858005d1a8c7a2a815437f4928fc224af118471112114"
+      },
+      "eventsAtStart": [
+        32
+      ]
+    },
+    {
+      "tStartMs": 105488,
+      "tEndMs": 105501,
+      "durationMs": 13,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 105501,
+      "tEndMs": 105502,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        33,
+        34
+      ]
+    },
+    {
+      "tStartMs": 105502,
+      "tEndMs": 105507,
+      "durationMs": 5,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        35
+      ]
+    },
+    {
+      "tStartMs": 105507,
+      "tEndMs": 105508,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        36
+      ]
+    },
+    {
+      "tStartMs": 105508,
+      "tEndMs": 105510,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        37
+      ]
+    },
+    {
+      "tStartMs": 105510,
+      "tEndMs": 105511,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        38
+      ]
+    },
+    {
+      "tStartMs": 105511,
+      "tEndMs": 105519,
+      "durationMs": 8,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        39
+      ]
+    },
+    {
+      "tStartMs": 105519,
+      "tEndMs": 105522,
+      "durationMs": 3,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        40
+      ]
+    },
+    {
+      "tStartMs": 105522,
+      "tEndMs": 105543,
+      "durationMs": 21,
+      "screenshot": {
+        "tMs": 105488,
+        "label": "After Open Navigation input",
+        "sha256": "5e814f69371b443325d60dfe43e42b50bf51ece9bc9c735f35178c697464e92a"
+      },
+      "eventsAtStart": [
+        41
+      ]
+    },
+    {
+      "tStartMs": 105543,
+      "tEndMs": 105544,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": [
+        42
+      ]
+    },
+    {
+      "tStartMs": 105544,
+      "tEndMs": 105545,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": [
+        43
+      ]
+    },
+    {
+      "tStartMs": 105545,
+      "tEndMs": 105670,
+      "durationMs": 125,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": [
+        44
+      ]
+    },
+    {
+      "tStartMs": 105670,
+      "tEndMs": 105677,
+      "durationMs": 7,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 105677,
+      "tEndMs": 105679,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 105679,
+      "tEndMs": 105689,
+      "durationMs": 10,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 105689,
+      "tEndMs": 105706,
+      "durationMs": 17,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": [
+        45
+      ]
+    },
+    {
+      "tStartMs": 105706,
+      "tEndMs": 106182,
+      "durationMs": 476,
+      "screenshot": {
+        "tMs": 105543,
+        "label": "Before Back input 1",
+        "sha256": "7f4c7a923392d38db6c92360a76378c8494c30c6c971934ef2ac24e1e2e34832"
+      },
+      "eventsAtStart": [
+        46
+      ]
+    },
+    {
+      "tStartMs": 106182,
+      "tEndMs": 106206,
+      "durationMs": 24,
+      "screenshot": {
+        "tMs": 106182,
+        "label": "After Back input 1",
+        "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 106206,
+      "tEndMs": 106207,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 106206,
+        "label": "Before Styles input",
+        "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+      },
+      "eventsAtStart": [
+        47
+      ]
+    },
+    {
+      "tStartMs": 106207,
+      "tEndMs": 106209,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 106206,
+        "label": "Before Styles input",
+        "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+      },
+      "eventsAtStart": [
+        48
+      ]
+    },
+    {
+      "tStartMs": 106209,
+      "tEndMs": 106245,
+      "durationMs": 36,
+      "screenshot": {
+        "tMs": 106206,
+        "label": "Before Styles input",
+        "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+      },
+      "eventsAtStart": [
+        49
+      ]
+    },
+    {
+      "tStartMs": 106245,
+      "tEndMs": 106268,
+      "durationMs": 23,
+      "screenshot": {
+        "tMs": 106206,
+        "label": "Before Styles input",
+        "sha256": "2653bca677b988ec1f10e28787565e4b903869d350d1f86903da60ccb38ecbdb"
+      },
+      "eventsAtStart": [
+        50
+      ]
+    },
+    {
+      "tStartMs": 106268,
+      "tEndMs": 106393,
+      "durationMs": 125,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 106393,
+      "tEndMs": 106394,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 106394,
+      "tEndMs": 106395,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 106395,
+      "tEndMs": 106604,
+      "durationMs": 209,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 106604,
+      "tEndMs": 106620,
+      "durationMs": 16,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": [
+        51
+      ]
+    },
+    {
+      "tStartMs": 106620,
+      "tEndMs": 106709,
+      "durationMs": 89,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": [
+        52
+      ]
+    },
+    {
+      "tStartMs": 106709,
+      "tEndMs": 107056,
+      "durationMs": 347,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 107056,
+      "tEndMs": 107057,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 107057,
+      "tEndMs": 107059,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 107059,
+      "tEndMs": 107209,
+      "durationMs": 150,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 107209,
+      "tEndMs": 107211,
+      "durationMs": 2,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 107211,
+      "tEndMs": 107238,
+      "durationMs": 27,
+      "screenshot": {
+        "tMs": 106268,
+        "label": "After Styles / final blank immediate",
+        "sha256": "94e7aef1a2ec9c5849c6fa82e76e641c932555dfd4d499cd727c6942af098307"
+      },
+      "eventsAtStart": [
+        53
+      ]
+    },
+    {
+      "tStartMs": 107238,
+      "tEndMs": 107709,
+      "durationMs": 471,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 107709,
+      "tEndMs": 108209,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 108209,
+      "tEndMs": 108709,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 108709,
+      "tEndMs": 109209,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 109209,
+      "tEndMs": 109709,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 109709,
+      "tEndMs": 110209,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 110209,
+      "tEndMs": 110709,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 110709,
+      "tEndMs": 111209,
+      "durationMs": 500,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 111209,
+      "tEndMs": 111210,
+      "durationMs": 1,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 111210,
+      "tEndMs": 111243,
+      "durationMs": 33,
+      "screenshot": {
+        "tMs": 107238,
+        "label": "Final blank canvas +1s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": [
+        54
+      ]
+    },
+    {
+      "tStartMs": 111243,
+      "tEndMs": 111494,
+      "durationMs": 251,
+      "screenshot": {
+        "tMs": 111243,
+        "label": "Final blank canvas +5s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": []
+    },
+    {
+      "tStartMs": 111494,
+      "tEndMs": 111974,
+      "durationMs": 480,
+      "screenshot": {
+        "tMs": 111243,
+        "label": "Final blank canvas +5s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": [
+        55
+      ]
+    },
+    {
+      "tStartMs": 111974,
+      "tEndMs": 113974,
+      "durationMs": 2000,
+      "screenshot": {
+        "tMs": 111243,
+        "label": "Final blank canvas +5s",
+        "sha256": "c49664b60c0a8a860820cfba2238d32cb713f4fc44d3432bc936ab5df06e30a0"
+      },
+      "eventsAtStart": [
+        56,
+        57
+      ]
+    }
+  ]
+}
