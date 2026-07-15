@@ -1,212 +1,282 @@
-# Gutenberg #80262 reproduction notes
+# Gutenberg #80262 natural reproduction
 
-## Result and Alec's criteria
+## Result
 
-The persistent human-visible blank from
-[issue #80262](https://github.com/WordPress/gutenberg/issues/80262) did **not**
-reproduce locally. The two reporter scenarios are isolated in
-`issue-80262-human-flows.spec.js`; both passed on clean trunk and their previews
-were still visible five seconds after the final route change.
+This is now a real, persistent reproduction of
+[Gutenberg #80262](https://github.com/WordPress/gutenberg/issues/80262) on the
+reporter's hosted
+[WordPress Playground URL](https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk).
+It uses only ordinary Site Editor controls and a normal period of browser
+inactivity. It does not stop or update a service worker, intercept a request,
+change the DOM, mock a browser property, or mutate a Gutenberg store.
 
-A separate test, `issue-80262-iframe-lifecycle-mechanism.spec.js`,
-deterministically makes the real Gutenberg load handler throw the exact
-null-`contentDocument` exception from the report. It uses an explicitly
-documented non-human iframe timing step and the portal later recovers.
+The canonical run reproduced the reporter's first sequence:
 
-This does not meet Alec's exact-reproduction criterion. It instead documents
-the unsuccessful human attempts and an artificial mechanism experiment. Do not
-present the ordinary route-remount flash or the recovering mechanism test as
-the reported persistent blank.
+1. Make a responsive Title font-size change in the Blog Home Query Loop.
+2. Apply the Twenty Twenty-Five **Dusk** style variation.
+3. Open **Review changes** and leave the tab untouched for 45 seconds.
+4. Click **Save**, wait for **Saved**, and click **Identity**.
 
-## Test environment
+The Identity canvas was blank immediately, after one second, and after five
+seconds. At five seconds the iframe was still connected, but its
+`contentDocument`, `documentElement`, and body were all unavailable. The
+browser logged the reporter's exact exception from the same production asset
+and location:
 
--   Gutenberg commit: `2eca416d45bfba5920b8e70b8759bc4e570ef48c`
--   Block Editor production asset: `ae8f14e90632f9e1151b` (also visible in the
-    reporter's console capture)
--   WordPress: `7.1-alpha-62740`, commit
-    `558828206710d533bed65ddfaccfac05bc3f402f`
--   Playwright: `1.61.1`
--   Browser: Chrome for Testing `149.0.7827.55`, headless
--   Theme: Twenty Twenty-Five for the human flows; Empty Theme for the isolated
-    iframe lifecycle test
--   Local runtime: clean `wp-env` at `http://localhost:8890`, rather than the
-    reporter's hosted WordPress Playground
+```text
+TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.
+    at HTMLIFrameElement.I (.../block-editor/index.min.js?ver=ae8f14e90632f9e1151b:122:927)
+```
 
-The recorded WordPress revision is the exact local snapshot used for these
-results. `.wp-env.test.json` tracks an unpinned WordPress source, so starting a
-fresh environment later may resolve a newer WordPress revision and will not by
-itself reconstruct that snapshot.
+The screenshot in [`issue-80262-natural-blank.png`](./issue-80262-natural-blank.png)
+was taken five seconds after the canonical **Identity** click.
+[`issue-80262-natural-repro.mp4`](./issue-80262-natural-repro.mp4) captures the
+reduced post-idle **Open Navigation > Styles** interaction. Its live frames
+preserve 5.711 seconds of capture timing, including 5.083 seconds of a blank
+right-hand Styles canvas after the Styles click; the encoding then holds the
+last blank frame for about two seconds for readability. Recording starts on
+the post-idle Templates surface, after the disconnected idle period and the
+worker's natural retirement, so it does not create the trigger or show the
+pre-idle healthy baseline.
 
-Check the test environment before running either test, and start it only if it
-is stopped:
+This satisfies the substance of
+[Alec's reproduction criteria](https://github.com/WordPress/gutenberg/issues/77716#issuecomment-4464309206):
+there are human steps, a runnable failing end-to-end probe, fresh-profile hit
+rates, visual evidence, and an explicit disclosure of the automation and idle
+precondition. The earlier forced iframe-detach experiment is retained only as
+mechanism coverage and is not counted as the real reproduction.
+
+## Manual reproduction
+
+Use Chrome 137 or newer. Keep DevTools closed until after the failure; an
+attached debugger can keep a service worker alive and hide the precondition.
+
+1. Open
+   `https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk` in a
+   fresh browser profile and enter the Site Editor.
+2. Open **Design > Identity**, confirm that its preview is visible, and click
+   **Edit**.
+3. Select the Query Loop, click **Edit pattern**, choose the **Mobile** view,
+   enable **Responsive styles**, select the first Title block, and change its
+   mobile font size. The qualifying run used **Medium**; the reporter used a
+   different responsive size.
+4. Exit pattern editing, open **Styles > Browse styles**, and select **Dusk**.
+5. Click **Review 2 changes**. Confirm that **Blog Home**, **Custom Styles**,
+   and **Typography styles** are listed.
+6. Leave the Review changes dialog open and the tab untouched for at least 45
+   seconds.
+7. Click **Save**, wait for **Saved**, and immediately click **Identity**.
+8. The right-hand preview remains blank. Open DevTools now to see the exception
+   above.
+
+The 45-second pause is not a synthetic race injection. It lets Chrome perform
+its normal idle service-worker lifecycle, just as it does in a browser with no
+debugger attached. The responsive edit and save reproduce the reporter's
+surface path, but they are not necessary: a reduced **loaded canvas -> 45
+seconds idle -> Open Navigation -> Styles** sequence reproduced in every
+completed fresh-profile attempt as well.
+
+## Runnable failing repro
+
+`issue-80262-playground-lifecycle-repro.cjs` launches the repository's bundled
+Chrome for Testing in headless mode, performs normal UI clicks, disconnects
+every automation/CDP client for the 45-second idle interval, and reconnects
+only after Chrome has naturally retired the Playground service worker. It then
+uses trusted mouse input for **Open Navigation > Styles** and checks all of the
+following:
+
+-   the Playground service worker existed before the idle interval;
+-   it was naturally absent afterward;
+-   the restarted worker served `wp-includes/empty.html` with HTTP 200 but no
+    `Document-Isolation-Policy` header;
+-   the exact `documentElement` exception occurred;
+-   the editor iframe was still blank with `contentDocument === null` five
+    seconds later.
+
+Run the standalone probe from the repository root:
 
 ```bash
-WP_ENV_PORT=8890 npx wp-env status --config .wp-env.test.json
-WP_ENV_PORT=8890 npx wp-env start --config .wp-env.test.json # only if stopped
+node test/e2e/specs/site-editor/issue-80262-playground-lifecycle-repro.cjs
 ```
 
-Port 8890 isolates this investigation from other local projects. Substitute a
-different free port if needed, and set `WP_BASE_URL` to that same port.
+The final checked-in helper was verified with Chrome 150 by setting
+`CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`.
+The environment override is optional; without it, the helper uses the
+repository's bundled Chrome for Testing.
 
-The reporter's two videos end with a persistent blank preview. The associated
-console capture contains this exception:
+It intentionally exits 1 when current trunk reproduces the bug, exits 0 when
+the canvas stays healthy, and exits 2 when a precondition is inconclusive. It
+prints the temporary artifact directory containing `result.json` and
+`repro.log`; a qualifying reproduction also contains a screenshot. Its large
+fresh Chrome profile is deleted during normal, inconclusive, timeout, and
+signal cleanup. Optional environment variables are `CHROME_PATH`,
+`PLAYGROUND_URL`, `IDLE_MS`, `RUN_TIMEOUT_MS`, and `ARTIFACT_DIR`.
 
-```text
-Uncaught TypeError: Cannot destructure property 'documentElement' ... as it is null.
-```
-
-### Console comparison
-
-The artificial lifecycle test produces the same relevant exception text once:
-
-```text
-Cannot destructure property 'documentElement' of 'N' as it is null.
-    at HTMLIFrameElement.I (.../index.min.js?ver=ae8f14e90632f9e1151b:81:927)
-```
-
-The reporter's console shows that exception twice at
-`HTMLIFrameElement.I (.../index.min.js?...:122:927)`. The error message, handler,
-asset version, and minified column match. Playwright reports an uncaught browser
-exception as a `pageerror`, without DevTools' `Uncaught TypeError:` prefix. The
-local served line number and the number of induced events differ.
-
-Both environments also log JQMIGRATE once and the
-`global-styles-css-custom-properties-inline-css was added to the iframe incorrectly`
-warning twice. The artificial local `wp-env` test does not reproduce the
-Playground-specific deprecation, cache, worker, and fetch messages elsewhere in
-the reporter's console capture. The test assertion intentionally targets only
-the null-document exception, not the full console transcript.
-
-## Human scenario 1: Dusk save, then Identity
-
-The first video begins with a responsive Mobile edit already pending.
-
-1. Open the Site Editor with Twenty Twenty-Five active.
-2. Open **Design > Identity**, verify the preview, and click **Edit**.
-3. Select the Query Loop and click **Edit pattern**.
-4. Enable the Mobile view and Responsive styles, select a Post Title, and set
-   its mobile font size to Large.
-5. Exit pattern editing, open **Styles > Browse styles**, and choose Dusk.
-6. Review the two changes, verify Blog Home and Custom Styles/Typography are
-   listed, save, and wait for Saved.
-7. Click **Identity**.
-
-Expected healthy result: the preview remains available after navigation and no
-null-`contentDocument` exception occurs.
-
-Reported result: the preview remains blank and the null-`contentDocument`
-exception appears.
-
-Current local result: the Identity preview is visible after five seconds and
-the exact exception does not occur. The isolated E2E passes.
-
-## Human scenario 2: responsive edit and block visibility, then Styles
-
-The second video starts from a recovered Site Editor session with the Dusk and
-responsive changes from scenario 1 already saved. The E2E creates that
-precondition afresh so it does not depend on scenario 1 running first.
-
-1. Reopen the Site Editor, open **Identity**, and click **Edit**.
-2. Edit the Query Loop pattern, enable Mobile/Responsive styles, set a Post
-   Title's mobile font size to Small, and exit pattern editing.
-3. Select the Header, choose **Hide**, enable **Hide on Mobile**, and apply.
-4. Open Navigation, review the one Blog Home change, save, and wait for Saved.
-5. Click **Styles**.
-
-Expected healthy result: the preview remains available after navigation and no
-null-`contentDocument` exception occurs.
-
-Reported result: the preview remains blank and the same exception appears.
-
-Current local result: the Styles preview is visible after five seconds and the
-exact exception does not occur. The isolated E2E passes.
-
-Run both human probes headlessly with:
+The associated Playwright wrapper is runnable with:
 
 ```bash
-WP_ENV_PORT=8890 WP_BASE_URL=http://localhost:8890 \
-npm run test:e2e -- \
-test/e2e/specs/site-editor/issue-80262-human-flows.spec.js \
---workers=1
+npx playwright test \
+    test/e2e/specs/site-editor/issue-80262-playground-lifecycle.spec.js \
+    --workers=1
 ```
 
-Final local result:
+The wrapper deliberately does not request Playwright's browser or page
+fixtures. It invokes the raw-browser probe and asserts the healthy behavior, so
+it fails against the affected hosted trunk. A normal continuously attached
+Playwright page suppresses the lifecycle being tested.
+
+### Automation disclosure
+
+The setup and post-idle observations use Puppeteer/CDP, but the interaction is
+browser-trusted mouse input at the center of visible controls. JavaScript is
+used only to locate visible controls and inspect the final iframe. During the
+idle interval the Puppeteer connection and the target session are both closed;
+the Chrome process and user-visible tab remain alive. The probe never attaches
+to the service-worker target.
+
+## Repetition and environment
+
+All completed trigger attempts used a new browser profile and deleted that
+profile afterward. Results on 2026-07-15 UTC were:
+
+| Flow                                                           | Browser                                     | Result                |
+| -------------------------------------------------------------- | ------------------------------------------- | --------------------- |
+| Reporter responsive + Dusk, Review-open idle, Save -> Identity | Chrome 150.0.7871.115                       | 3/3 persistent blanks |
+| Reduced idle -> Styles sequence                                | Chrome 150.0.7871.115                       | 6/6 persistent blanks |
+| Reduced idle -> Styles sequence                                | Repository Chrome for Testing 149.0.7827.55 | 1/1 persistent blanks |
+
+Each completed qualifying attempt had all three decisive signals: a naturally
+absent worker after idle, an `empty.html` response missing DIP, and the exact
+`:122:927` exception with a blank/null canvas at five seconds. Additional
+canonical repeats should be recorded here if they change the hit rate. The
+three canonical save-completion timings from the trusted Save click resolving
+until **Saved** appeared were 257, 297, and 277 ms. Two canonical runs used the
+reporter's **Large** responsive Title size; the first used **Medium**.
+
+The sixth Chrome 150 reduced run was the final verification of the exact
+checked-in helper. It intentionally exited 1 after all strict checks passed.
+Its two missing-DIP responses were followed by the exact exception 18 and 15
+ms later, respectively.
+
+One attempted evidence-capture run is excluded from the hit rate: taking a
+top-level screenshot after worker retirement coincided with a fresh preview
+request before Save and invalidated the intended action order. It was
+discarded and rerun without the pre-action capture. Screenshots taken after a
+completed route failure do not affect qualification.
+
+Setup and probe-development attempts that never completed the documented
+trigger are also excluded. These included an earlier revision with too short a
+route-control wait, hosted renderer stalls, and bundled-Chrome attempts where
+WordPress displayed its reauthentication overlay instead of mounting
+Gutenberg. The probe classified these as inconclusive rather than healthy,
+removed their profiles and browser processes, and did not count them in the
+table.
+
+The canonical hosted environment reported:
+
+-   WordPress `7.1-alpha-62752`;
+-   Gutenberg `23.6.0-rc.1` from the hosted `trunk` branch;
+-   block-editor production asset `ae8f14e90632f9e1151b`;
+-   Twenty Twenty-Five;
+-   headless Chrome 150 on macOS.
+
+The reporter used WordPress commit
+`558828206710d533bed65ddfaccfac05bc3f402f` (`7.1-alpha-62740`). The hosted
+revision advanced before this investigation, but the block-editor asset hash
+and its minified exception location are identical.
+
+## Console comparison
+
+Yes: the natural canonical reproduction emits the relevant console messages
+from the reporter's screenshot, not merely a similar artificial error. It
+logged the exact exception shown above and logged this warning twice:
 
 ```text
-2 passed (20.9s)
+global-styles-css-custom-properties-inline-css was added to the iframe incorrectly.
+Please use block.json or enqueue_block_assets to add styles to the iframe.
 ```
 
-A diagnostic observer measured a roughly 149-150 ms missing-canvas interval
-during Identity-to-Styles replacement. That assertion was deliberately removed
-from the human E2E: it only demonstrated normal lifecycle churn and was not the
-reported persistent failure.
+The reporter also had unrelated Playground, cache, extension, and deprecation
+noise. The reproduction does not claim that every incidental console line is
+identical.
 
-## Deterministic exception mechanism (non-human)
+## Source-level cause
 
-The lifecycle test exercises the exact failing source path:
+There are two cooperating failures.
 
-1. Open a real Site Editor canvas and verify its real blob-backed iframe and
-   React portal body are visible.
-2. Start a native iframe `load` event.
-3. In a capture-phase listener, detach the iframe after event dispatch has
-   begun.
-4. Let the browser continue the frozen event path into Gutenberg's real target
-   listener while `iframe.contentDocument` is null.
-5. Reinsert the iframe on the next task. That causes a second, valid load, so a
-   lifecycle-safe implementation can recover.
-6. Verify the original iframe and portal body recover, then assert that the
-   exact null-document page error did not occur.
+### 1. Playground forgets which scopes require document isolation
 
-No DOM property is mocked and no Gutenberg data store is changed. The detach
-and reinsert are not normal user operations. Current trunk reaches both
-recovery assertions, then fails the targeted page-error assertion with:
+Playground patches Gutenberg's block-editor script so blob-backed editor
+iframes become scoped
+[`/wp-includes/empty.html` documents](https://github.com/WordPress/wordpress-playground/blob/e0fd8992f9a6ded1a01015b6831ae2e39653b106/packages/playground/remote/service-worker.ts#L521-L557).
+The parent Site Editor document carries
+`Document-Isolation-Policy: isolate-and-credentialless`. The child iframe must
+carry the same header; otherwise Chromium deliberately blocks the parent's
+`iframe.contentDocument` access. Playground's own
+[DIP investigation](https://github.com/WordPress/wordpress-playground/pull/3320)
+documents exactly that behavior.
 
-```text
-Cannot destructure property 'documentElement' of 'N' as it is null.
+The service worker decides whether to add DIP to `empty.html` by looking in
+[`scopesWithCrossOriginIsolation`](https://github.com/WordPress/wordpress-playground/blob/e0fd8992f9a6ded1a01015b6831ae2e39653b106/packages/playground/remote/service-worker.ts#L565-L587).
+That registry is only an in-memory JavaScript
+[`Set`](https://github.com/WordPress/wordpress-playground/blob/e0fd8992f9a6ded1a01015b6831ae2e39653b106/packages/playground/remote/service-worker.ts#L671-L715).
+It is populated when the worker observes a parent HTML response that already
+has DIP. Normal service-worker retirement discards the global and the Set. On
+the next `empty.html` request, the restarted worker has not re-served the still
+loaded parent document, so it does not know that the scope needs DIP.
+
+The network evidence in every qualifying run is therefore internally
+consistent:
+
+1. before idle, the existing editor iframe is healthy and same-origin;
+2. after idle, the Playground service-worker target is absent;
+3. a normal route click restarts it;
+4. it serves `empty.html` from the service worker with `content-type: text/html`
+   but no DIP;
+5. the isolated parent cannot access the non-matching child, so
+   `contentDocument` is null permanently for that document.
+
+This state-tracking path was added by
+[WordPress Playground PR #3515](https://github.com/WordPress/wordpress-playground/pull/3515)
+after Gutenberg began sending DIP directly in
+[Gutenberg PR #75991](https://github.com/WordPress/gutenberg/pull/75991).
+The likely primary fix belongs in Playground: persist or otherwise reconstruct
+the per-scope DIP requirement across service-worker lifetimes. Adding DIP to
+every `empty.html` response is not obviously safe; the current source comment
+notes that unconditional credentialless isolation can break authenticated REST
+requests.
+
+### 2. Gutenberg's iframe load handler assumes access can never be null
+
+`packages/block-editor/src/components/iframe/index.js` installs this native
+load handler:
+
+```js
+function onLoad() {
+	const { contentDocument } = node;
+	const { documentElement } = contentDocument;
+	iFrameDocument = contentDocument;
+	setIframeDocument( contentDocument );
+}
 ```
 
-Run it headlessly with:
+When Playground supplies the mismatched child document, the second destructure
+throws before Gutenberg can initialize its portal. The native load listener
+was introduced by commit `7295c00f862` in
+[PR #76314](https://github.com/WordPress/gutenberg/pull/76314). A null guard would
+avoid the uncaught exception and is sensible defensive code, but it cannot by
+itself make a browser-isolated child accessible. Without a later correctly
+isolated navigation, the canvas would still be blank. That is why the
+Playground state-loss fix is necessary for the persistent report.
 
-```bash
-WP_ENV_PORT=8890 WP_BASE_URL=http://localhost:8890 \
-npm run test:e2e -- \
-test/e2e/specs/site-editor/issue-80262-iframe-lifecycle-mechanism.spec.js \
---workers=1
-```
+## Other probes retained on this branch
 
-## Source analysis
+`issue-80262-human-flows.spec.js` contains the two reporter flows for a local
+`wp-env`. Both stayed healthy in that non-Playground environment (`2 passed`),
+which is expected now that the missing Playground lifecycle is understood.
 
-`packages/block-editor/src/components/iframe/index.js` installs a native load
-handler which reads `node.contentDocument`, immediately destructures its
-`documentElement`, and only then stores the document for the React portal. If
-the browsing context is temporarily absent, the exception stops initialization
-for that load event. The handler fails to install the current document. Without
-a later valid load, the portal may remain absent or attached to a stale browsing
-context.
-
-The same component already guards a later body-ref callback because moving an
-iframe can temporarily destroy and recreate its window. The native load handler
-was introduced by commit `7295c00f862` (PR #76314).
-
-The Site Editor provides a plausible timing surface, but not a proven cause.
-Identity supplies `<Editor />` directly, while Styles supplies
-`<StylesPreviewArea><Editor /></StylesPreviewArea>`. Switching routes therefore
-replaces the editor/provider/iframe tree. Each new editor also waits for a 100 ms
-quiet period in core-data resolution before rendering. A one-off experiment
-that returned `<Editor />` directly for ordinary Styles preview removed the
-transient continuity gap, but that was a proxy result and did not prove a fix
-for the persistent report.
-
-No explicit responsive-edit remount path was found. Saving may affect resolver
-timing, but the investigation did not prove that responsive edits or saving
-cause the null document.
-
-As a controlled source validation, adding only
-`if ( ! contentDocument ) return;` before the destructure and rebuilding the
-production assets changed the deterministic mechanism test from the exact
-page-error failure to `1 passed`. Reinsertion deliberately supplies a second
-valid load in that test, so this proves that this guard suppresses the forced
-null-event exception when a later valid load is supplied. Other lifecycle fixes
-remain possible, and the experiment does not prove the guard alone repairs the
-reporter's persistent blank. The source experiment was reverted, and the
-worktree is on the failing trunk baseline.
+`issue-80262-iframe-lifecycle-mechanism.spec.js` deliberately detaches an iframe
+during a native load event. It makes the same Gutenberg source line throw, but
+the iframe later reloads and recovers. That test is non-human mechanism coverage
+and must not be presented as the persistent reproduction. The hosted
+Playground lifecycle probe above is the canonical real repro.
