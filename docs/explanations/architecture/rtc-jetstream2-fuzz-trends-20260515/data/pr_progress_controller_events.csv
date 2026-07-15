@@ -1,56 +1,4 @@
 timestamp,message,event_type
-2026-07-14T18:20:16Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:20:16Z,controller run_once failed rc=1,other
-2026-07-14T18:22:20Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:22:20Z,controller run_once failed rc=1,other
-2026-07-14T18:24:25Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:24:25Z,controller run_once failed rc=1,other
-2026-07-14T18:26:30Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:26:30Z,controller run_once failed rc=1,other
-2026-07-14T18:28:35Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:28:35Z,controller run_once failed rc=1,other
-2026-07-14T18:30:40Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:30:40Z,controller run_once failed rc=1,other
-2026-07-14T18:32:45Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:32:45Z,controller run_once failed rc=1,other
-2026-07-14T18:34:49Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:34:49Z,controller run_once failed rc=1,other
-2026-07-14T18:36:54Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:36:54Z,controller run_once failed rc=1,other
-2026-07-14T18:38:59Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:38:59Z,controller run_once failed rc=1,other
-2026-07-14T18:41:03Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:41:03Z,controller run_once failed rc=1,other
-2026-07-14T18:43:07Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:43:07Z,controller run_once failed rc=1,other
-2026-07-14T18:45:12Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:45:12Z,controller run_once failed rc=1,other
-2026-07-14T18:47:16Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:47:16Z,controller run_once failed rc=1,other
-2026-07-14T18:49:22Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:49:22Z,controller run_once failed rc=1,other
-2026-07-14T18:51:27Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:51:27Z,controller run_once failed rc=1,other
-2026-07-14T18:53:30Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:53:30Z,controller run_once failed rc=1,other
-2026-07-14T18:55:33Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:55:33Z,controller run_once failed rc=1,other
-2026-07-14T18:57:37Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:57:37Z,controller run_once failed rc=1,other
-2026-07-14T18:59:40Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T18:59:40Z,controller run_once failed rc=1,other
-2026-07-14T19:01:44Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T19:01:44Z,controller run_once failed rc=1,other
-2026-07-14T19:03:47Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T19:03:47Z,controller run_once failed rc=1,other
-2026-07-14T19:05:50Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T19:05:50Z,controller run_once failed rc=1,other
-2026-07-14T19:07:54Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T19:07:54Z,controller run_once failed rc=1,other
-2026-07-14T19:09:57Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T19:09:57Z,controller run_once failed rc=1,other
-2026-07-14T19:12:01Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
-2026-07-14T19:12:01Z,controller run_once failed rc=1,other
 2026-07-14T19:14:05Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
 2026-07-14T19:14:05Z,controller run_once failed rc=1,other
 2026-07-14T19:16:08Z,cannot assert validated release-candidate adoption because destination is missing branch=js2/all-merged-rebased-20260701 source=repair/pa-exact-same-user-delete-1150141-20260714 commit=5758dca9c01d68e226198802cae24e592f30e9b9,other
@@ -99,3 +47,55 @@ timestamp,message,event_type
 2026-07-14T20:24:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-07-14T20:26:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-07-14T20:29:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:31:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:33:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:35:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:37:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:39:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:41:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:43:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:45:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:47:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:49:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:52:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:54:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:56:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T20:58:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:00:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:02:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:04:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:06:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:08:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:10:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:12:58Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:15:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:17:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:19:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:21:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:23:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:25:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:27:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:29:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:31:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:33:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:35:58Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:38:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:40:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:42:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:44:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:46:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:48:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:50:36Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:52:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:54:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:56:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T21:58:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:01:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:03:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:05:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:07:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:09:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:11:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:13:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:15:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-14T22:17:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other

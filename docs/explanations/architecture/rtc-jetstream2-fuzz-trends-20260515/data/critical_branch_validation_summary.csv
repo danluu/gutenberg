@@ -100,6 +100,8 @@ fix/rtc-title-reload-stale-save-noop-20260710T033120Z,0,2,2,"fix/rtc title reloa
 noop 20260710T033120Z"
 repair/benchmark-canary-empty-crdt-reload-20260710T093611Z,0,2,2,"repair/benchmark canary empty crdt
 reload 20260710T093611Z"
+repair/benchmark-canary-same-user-delete-20260714T215857Z,0,2,2,"repair/benchmark canary same user
+delete 20260714T215857Z"
 repair/plain-editor-product-smoke-rtc-save-proof-20260710T045453Z,0,2,2,"repair/plain editor product smoke
 rtc save proof 20260710T045453Z"
 repair/adopted-repair-benchmark-canary-exact-stack-build-20-1fac7689c429,0,1,1,"repair/adopted repair benchmark
