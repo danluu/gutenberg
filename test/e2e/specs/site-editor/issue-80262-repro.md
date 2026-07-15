@@ -12,15 +12,19 @@ change the DOM, mock a browser property, or mutate a Gutenberg store.
 
 The canonical run reproduced the reporter's first sequence:
 
-1. In the **Blog Home** template, edit the Query Loop pattern, switch the
-   editor's preview to **Mobile**, enable **Responsive styles**, select the
-   first post's **Title** block, and set its **Font size** to **Medium**.
+1. In the **Blog Home** template editor, open **Document Overview > List
+   View**, select the parent **Query Loop** block, and click **Edit pattern**
+   in its block toolbar. Switch the editor's preview to **Mobile**, enable
+   **Responsive styles**, select the first post's **Title** block, and set its
+   **Font size** to **Medium**.
 2. Apply the Twenty Twenty-Five **Dusk** style variation.
 3. Open **Review changes** and leave the tab untouched for 45 seconds.
 4. Click **Save**, wait for **Saved**, and click **Identity**.
 
-In this step, **Query Loop** means the repeating list of posts on the Blog Home
-template. **Title** means a post-title block inside that list, such as the
+In this step, **Query Loop** means the parent block for the repeating list of
+posts on the Blog Home template. It is easiest to select from **List View**
+because clicking a visible post heading in the canvas selects the child Title
+block instead. **Title** means a post-title block inside that list, such as the
 “Hello world!” heading; it does not mean the website title. Enabling
 **Responsive styles** while **Mobile** is selected makes the new font size a
 mobile-specific value rather than changing the title at every screen size.
@@ -79,20 +83,25 @@ attached debugger can keep a service worker alive and hide the precondition.
    fresh browser profile and enter the Site Editor.
 2. Open **Design > Identity**, confirm that its preview is visible, and click
    **Edit**.
-3. In the canvas, click the repeating list of posts to select the **Query
-   Loop** block, then click **Edit pattern**. In the editor top bar, open
-   **View**, choose **Mobile**, and enable **Responsive styles**. Click the
-   first post's **Title** block—the post heading such as “Hello world!”, not
-   the website title. In the settings sidebar's **Font size** control, choose
-   **Medium**, then click **Exit pattern**. The reporter chose a different
-   responsive font size; the exact new size is not important to the trigger.
-4. Open **Styles > Browse styles** and select **Dusk**.
-5. Click **Review 2 changes**. Confirm that **Blog Home**, **Custom Styles**,
+3. After the full template editor opens, go to its upper-left toolbar. Click
+   **Document Overview**—the button with three staggered horizontal lines,
+   immediately to the right of Undo and Redo. In the panel that opens, choose
+   **List View** if it is not already active, then click the **Query Loop** row.
+   This selects the parent block around the repeating posts. In the block
+   toolbar above the selected content, click **Edit pattern**.
+4. In the editor top bar, open **View**, choose **Mobile**, and enable
+   **Responsive styles**. In the canvas, click the first post's **Title**
+   block—the post heading such as “Hello world!”, not the website title. In
+   the settings sidebar's **Font size** control, choose **Medium**, then click
+   **Exit pattern**. The reporter chose a different responsive font size; the
+   exact new size is not important to the trigger.
+5. Open **Styles > Browse styles** and select **Dusk**.
+6. Click **Review 2 changes**. Confirm that **Blog Home**, **Custom Styles**,
    and **Typography styles** are listed.
-6. Leave the Review changes dialog open and the tab untouched for at least 45
+7. Leave the Review changes dialog open and the tab untouched for at least 45
    seconds.
-7. Click **Save**, wait for **Saved**, and immediately click **Identity**.
-8. The right-hand preview remains blank. Open DevTools now to see the exception
+8. Click **Save**, wait for **Saved**, and immediately click **Identity**.
+9. The right-hand preview remains blank. Open DevTools now to see the exception
    above.
 
 The 45-second pause is not a synthetic race injection. It lets Chrome perform
