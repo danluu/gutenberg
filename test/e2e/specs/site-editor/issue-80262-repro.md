@@ -80,29 +80,47 @@ attached debugger can keep a service worker alive and hide the precondition.
 
 1. Open
    `https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk` in a
-   fresh browser profile and enter the Site Editor.
-2. Open **Design > Identity**, confirm that its preview is visible, and click
-   **Edit**.
-3. After the full template editor opens, go to its upper-left toolbar. Click
+   fresh browser profile and wait for the WordPress site to finish loading.
+2. In the black WordPress admin bar across the top of the page, click **Site
+   Editor** (some WordPress versions label this link **Edit site**). Depending
+   on the current Site Editor state, this opens either the Design navigation
+   or a full template editor.
+3. Follow the reporter's route to the Design navigation. If a full template
+   editor opened, click **Open Navigation**—the left-facing arrow in the
+   editor's upper-left corner—to leave that editor. In the left-hand
+   navigation, under **Design**, click **Identity**. The main content area
+   changes to the Identity screen, with a large site preview on the right.
+4. In that preview pane, click the **Edit** button above the preview. This
+   opens the template used to render the posts homepage. Confirm that the
+   center of the editor's top bar says **Blog Home · Template**; that label
+   means the Blog Home template editor is open.
+
+    There are two quicker ways to reach the same editor: the **Site Editor**
+    admin-bar link may open it directly, or you can use **Design > Templates >
+    Blog Home**, select **Blog Home**, and click **Edit**. In either case,
+    confirm the **Blog Home · Template** label. The canonical reproduction used
+    the Identity-preview route above because it matches the reporter's flow.
+
+5. After the full template editor opens, go to its upper-left toolbar. Click
    **Document Overview**—the button with three staggered horizontal lines,
    immediately to the right of Undo and Redo. In the panel that opens, choose
    **List View** if it is not already active, then click the **Query Loop** row.
    This selects the parent block around the repeating posts. In the block
    toolbar above the selected content, click **Edit pattern**.
-4. In the editor top bar, open **View**, choose **Mobile**, and enable
+6. In the editor top bar, open **View**, choose **Mobile**, and enable
    **Responsive styles**. In the canvas, click the first post's **Title**
    block—the post heading such as “Hello world!”, not the website title. In
    the settings sidebar's **Font size** control, choose **Medium**, then click
    **Exit pattern**. The reporter chose a different responsive font size; the
    exact new size is not important to the trigger.
-5. Open **Styles > Browse styles** and select **Dusk**.
-6. Click **Review 2 changes**. Confirm that **Blog Home**, **Custom Styles**,
+7. Open **Styles > Browse styles** and select **Dusk**.
+8. Click **Review 2 changes**. Confirm that **Blog Home**, **Custom Styles**,
    and **Typography styles** are listed.
-7. Leave the Review changes dialog open and the tab untouched for at least 45
+9. Leave the Review changes dialog open and the tab untouched for at least 45
    seconds.
-8. Click **Save**, wait for **Saved**, and immediately click **Identity**.
-9. The right-hand preview remains blank. Open DevTools now to see the exception
-   above.
+10. Click **Save**, wait for **Saved**, and immediately click **Identity**.
+11. The right-hand preview remains blank. Open DevTools now to see the exception
+    above.
 
 The 45-second pause is not a synthetic race injection. It lets Chrome perform
 its normal idle service-worker lifecycle, just as it does in a browser with no
