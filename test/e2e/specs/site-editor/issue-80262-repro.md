@@ -12,10 +12,18 @@ change the DOM, mock a browser property, or mutate a Gutenberg store.
 
 The canonical run reproduced the reporter's first sequence:
 
-1. Make a responsive Title font-size change in the Blog Home Query Loop.
+1. In the **Blog Home** template, edit the Query Loop pattern, switch the
+   editor's preview to **Mobile**, enable **Responsive styles**, select the
+   first post's **Title** block, and set its **Font size** to **Medium**.
 2. Apply the Twenty Twenty-Five **Dusk** style variation.
 3. Open **Review changes** and leave the tab untouched for 45 seconds.
 4. Click **Save**, wait for **Saved**, and click **Identity**.
+
+In this step, **Query Loop** means the repeating list of posts on the Blog Home
+template. **Title** means a post-title block inside that list, such as the
+“Hello world!” heading; it does not mean the website title. Enabling
+**Responsive styles** while **Mobile** is selected makes the new font size a
+mobile-specific value rather than changing the title at every screen size.
 
 The Identity canvas was blank immediately, after one second, and after five
 seconds. At five seconds the iframe was still connected, but its
@@ -71,11 +79,14 @@ attached debugger can keep a service worker alive and hide the precondition.
    fresh browser profile and enter the Site Editor.
 2. Open **Design > Identity**, confirm that its preview is visible, and click
    **Edit**.
-3. Select the Query Loop, click **Edit pattern**, choose the **Mobile** view,
-   enable **Responsive styles**, select the first Title block, and change its
-   mobile font size. The qualifying run used **Medium**; the reporter used a
-   different responsive size.
-4. Exit pattern editing, open **Styles > Browse styles**, and select **Dusk**.
+3. In the canvas, click the repeating list of posts to select the **Query
+   Loop** block, then click **Edit pattern**. In the editor top bar, open
+   **View**, choose **Mobile**, and enable **Responsive styles**. Click the
+   first post's **Title** block—the post heading such as “Hello world!”, not
+   the website title. In the settings sidebar's **Font size** control, choose
+   **Medium**, then click **Exit pattern**. The reporter chose a different
+   responsive font size; the exact new size is not important to the trigger.
+4. Open **Styles > Browse styles** and select **Dusk**.
 5. Click **Review 2 changes**. Confirm that **Blog Home**, **Custom Styles**,
    and **Typography styles** are listed.
 6. Leave the Review changes dialog open and the tab untouched for at least 45
